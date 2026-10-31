@@ -34,21 +34,21 @@ ay=$(( H / 2 )); ax=$(( 3 * W / 4 ));     ady=0; adx=-1;
 
 
 # Color Menu type shit yeah... numbers or whatever
-names=(Cyan Red White Yellow)
-codes=(46 41 47 43)
+names=(Red, Green, Yellow, Blue, Magenta, Cyan, White)
+codes=(41 42 43 44 45 46 47)
 ...
 for i in "${!names[@]}"; do 
     printf '  %d) \e[%sm  \e[0m %s\n' $(( i + 1 )) "${codes[i]}" "${names[i]}"
 done
 while true; do
-    IFS= read -rsn1 -p "Enter 1-4: " choice
+    IFS= read -rsn1 -p "Enter Your Choice: " choice
     echo
-    [[ $choice =~ ^[1-4]$ ]] && break
+    [[ $choice =~ ^[1-7]$ ]] && ((choice >= 1 && choice <= count )) && break
 done
 pidx=$(( choice - 1 ))
 aidx=$pidx
 while (( aidx == pidx )); do
-    aidx=$(( RANDOM % 4 ));
+    aidx=$(( RANDOM % count ));
 done
 PCOL=${codes[pidx]}
 ACOL=${codes[aidx]}
