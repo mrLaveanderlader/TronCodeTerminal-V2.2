@@ -1,0 +1,124 @@
+#!/bin/bash
+
+
+# If this is your returning time or first time or even your 3rd time I am sorry not sorry in advance.
+# this is my own private code domicile and I wont be programed or whatever they said in breaking bad. 
+# Don't like the code then cry me a tibutary. Im the one coding at 1 billion o'clock AM on a Wednesday instead of sleeping,
+# I am armed with a large baja blast nacho fires and 3 bean burrios from taco bell, so belive me whe aren't bottom of the barrel code yet.
+# To reach rock bottom you gotta be coding see the sun rising up as the sky changes colors and youve done nothing but code a feature you didnt actually need.
+
+
+# map height and width stuff here much, or something like that type shit.
+declare -A wall
+H=$(( $(tput lines) - 1 ))
+W=$(( $(tput cols) - 1 ))
+
+
+# idk what to say here other than I cant be funny all the time
+cleanup() { tput cnorm; tput sgr0; clear; }
+trap cleanup EXIT
+trap 'exit' INT TERM
+
+# Draw moves cursor to spot (tput, cup) and prints one space with a colored backround while \e[0m 
+draw() { tput cup "$1" "$2"; printf '\e[%sm \e[0m' "$3"; }
+
+# Free only works if the cell is on the screen and nobody has a trail at the point.
+free() { 
+        (( $1 >= 0 && $1 < H && $2 >= 0 && $2 < W )) && [[ -z ${wall["$1,$2"]} ]] 
+    }
+
+
+# Get that starting spot fresh for the idk spawning ig 1 is you -1 is dat nasty clanker.
+py=$(( H / 2 )); px=$(( W / 4 ));     pdy=0; pdx=1
+ay=$(( H / 2 )); ax=$(( 3 * W / 4 ));     ady=0; adx=-1;
+
+
+# Color Menu type shit yeah... numbers or whatever
+names=(Cyan Red White Yellow)
+codes=(46 41 47 43)
+...
+for i in "${!names[@]}"; do 
+    printf '  %d) \e[%sm  \e[0m %s\n' $(( i + 1 )) "${codes[i]}" "${names[i]}"
+done
+while true; do
+    IFS= read -rsn1 -p "Enter 1-4: " choice
+    echo
+    [[ $choice =~ ^[1-4]$ ]] && break
+done
+pidx=$(( choice - 1 ))
+aidx=$pidx
+while (( aidx == pidx )); do
+    aidx=$(( RANDOM % 4 ));
+done
+PCOL=${codes[pidx]}
+ACOL=${codes[aidx]}
+
+
+# I sure hope the hellhole abomination of fear and I don't wanna do this anymore dosent activate. Meanwile the command to activate the hellhole abomination of fear and I dont wanna do this anymore.
+tput civis
+clear
+wall["$py,$px"]=1; draw $py $px "$PCOL"
+wall["$ay,$ax"]=1; draw $ay $ax "$ACOL"
+# fuhs the cursor  and hides it.
+
+# Main loop or somehting ts ts nonshelant dread head stuff right here.
+while true; do
+    key=""
+    IFS= read -rsn1 -t 0.08 key
+    if [[ $key == $'\e' ]]; then IFS= read -rsn2 -t 0.01 key; fi
+    case $key in
+        '[A'|w) ndy=-1; ndx=0 ;;
+        '[B'|s) ndy=1;  ndx=0 ;;
+        '[C'|d) ndy=0;  ndx=1 ;;
+        '[D'|a) ndy=0;  ndx=-1 ;;
+        q)      exit ;;
+        *)      ndy=$pdy; ndx=$pdx ;;
+    esac
+    if (( ndy != -pdy || ndx != -pdx )); then pdy=$ndy; pdx=$ndx; fi
+
+
+# dirty wireback oil slinging copper laced waste of clanker space
+if ! free $(( ay + ady )) $(( ax + adx )) || (( RANDOM % 20 == 0 )); then
+    opts=()
+    for d in "-1 0" "1 0" "0 -1" "0 1"; do
+        set -- $d
+        (( $1 == -ady && $2 == -adx )) && continue
+        free $(( ay + $1 )) $(( ax + $2 )) && opts+=("$d")
+    done
+    if (( ${#opts[@]} > 0 )); then
+        set -- ${opts[RANDOM % ${#opts[@]}]}
+        ady=$1; adx=$2
+    fi
+fi
+
+# your magisty the collison theres been a second bus
+npy=$(( py + pdy )); npx=$(( px + pdx ))
+nay=$(( ay + ady )); nax=$(( ax + adx ))
+pdead=0; adead=0
+free $npy $npx || pdead=1
+free $nay $nax || adead=1
+if (( npy == nay && npx == nax )); then pdead=1; adead=1; fi
+
+# errybody moves to a new cell and records it too da wall
+if (( pdead == 0 )); then
+    py=$npy; px=$npx; wall["$py,$px"]=1; draw $py $px "$PCOL"
+fi
+if (( adead == 0 )); then
+    ay=$nay; ax=$nax; wall["$ay,$ax"]=1; draw $ay $ax "$ACOL"
+fi
+
+# Death of instant
+if (( pdead || adead )); then
+    if (( pdead && adead )); then msg="DRAW"
+    elif (( pdead )); then msg="YOU LOSE"
+    else msg="YOU WIN!"; fi
+    tput cup $(( H / 2 )) $(( W / 2 - ${#msg} / 2 ))
+    printf '\e[1m%s\e[0m' "$msg"
+    read -rsn1
+    break
+fi 
+done
+
+# revision log IDK 4:40 AM 10/29/2026
+# HOLY SH*T I ACTUALLY MADE A GAME IN BASH IN MY TERMINAL ON MY TIME. I DIDNT THINK I COULD DO IT. I DOUBTED MYSELF MORE THAN EVERYONE.
+# I MADE TRON USING GITHUB BASH SCRIPTING. HOLY!!!!!!!!!!
