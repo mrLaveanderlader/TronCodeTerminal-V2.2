@@ -10,8 +10,11 @@
 
 # map height and width stuff here much, or something like that type shit.
 declare -A wall
-H=$(( $(tput lines) - 1 ))
-W=$(( $(tput cols) - 1 ))
+declare -A col
+R=$(( $(tput lines) - 1 ))    
+PW=$(( $(tput cols) - 1 ))    
+PH=$(( R * 2 ))
+# Sets the pixel height so theres 2 pixels per row and can 
 
 
 # idk what to say here other than I cant be funny all the time
@@ -19,13 +22,31 @@ cleanup() { tput cnorm; tput sgr0; clear; }
 trap cleanup EXIT
 trap 'exit' INT TERM
 
-# Draw moves cursor to spot (tput, cup) and prints one space with a colored backround while \e[0m 
-draw() { tput cup "$1" "$2"; printf '\e[%sm \e[0m' "$3"; }
+# Due to the changes of adding new colors and the ability to blend we use the function RENDER now
+render() { 
+        local x=$2 cy$(( $1 * 2 ))
+        local t=${col["$(( cy * 2 )),$x"]} b=${col["$(( cy * 2 )),$x"]}
+        if [[ -n $t || -n $b ]]; then
+            printf '\e[38;2;%sm\e[48;2;%sm▀\e[0m' "$t" "$b"
+        elif [[ -n $t ]]; then
+            printf '\e[38;2;%sm▀\e[0m' "$t"
+        else [[ -n $b ]]; then
+            printf '\e[38;2;%sm▄\e[0m' "$b"
+        fi
+        
+}
+
+# Does the averaging 50/50 style of the two colors and returns the new color as the MIX variable.
+mix() {
+    local IFS=';'
+    local -a a=($1) b=($2)
+    MIX="$(( (a[0] + b[0]) / 2 ));$(( (a[1] + b[1]) / 2 ));$(( (a[2] + b[2]) / 2 ))"
+}
 
 # Free only works if the cell is on the screen and nobody has a trail at the point.
 free() { 
         (( $1 >= 0 && $1 < H && $2 >= 0 && $2 < W )) && [[ -z ${wall["$1,$2"]} ]] 
-    }
+}
 
 
 # Get that starting spot fresh for the idk spawning ig 1 is you -1 is dat nasty clanker.
