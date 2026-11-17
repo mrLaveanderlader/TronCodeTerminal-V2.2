@@ -16,6 +16,10 @@ PW=$(( $(tput cols) - 1 ))
 PH=$(( R * 2 ))
 # Sets the pixel height so theres 2 pixels per row and can 
 
+# Sets the starting position due to the split of the pixels now. 
+py=$(( PH / 2 )); px=$(( PW / 4 ));     pdy=0; pdx=1
+ay=$(( PH / 2 )); ax=$(( 3 * PW / 4 )); ady=0; adx=-1
+
 
 # idk what to say here other than I cant be funny all the time
 cleanup() { tput cnorm; tput sgr0; clear; }
@@ -44,43 +48,64 @@ mix() {
 }
 
 # Free only works if the cell is on the screen and nobody has a trail at the point.
-free() { 
-        (( $1 >= 0 && $1 < H && $2 >= 0 && $2 < W )) && [[ -z ${wall["$1,$2"]} ]] 
+free() {
+    (( $1 >= 0 && $1 < PH && $2 >= 0 && $2 < PW )) && [[ -z ${wall["$1,$2"]} ]]
 }
 
 
-# Get that starting spot fresh for the idk spawning ig 1 is you -1 is dat nasty clanker.
-py=$(( H / 2 )); px=$(( W / 4 ));     pdy=0; pdx=1
-ay=$(( H / 2 )); ax=$(( 3 * W / 4 ));     ady=0; adx=-1;
-
-
 # Color Menu type shit yeah... numbers or whatever
-names=(Red, Green, Yellow, Blue, Magenta, Cyan, White)
-codes=(41 42 43 44 45 46 47)
-...
-for i in "${!names[@]}"; do 
-    printf '  %d) \e[%sm  \e[0m %s\n' $(( i + 1 )) "${codes[i]}" "${names[i]}"
+names=(Red Green Yellow Blue Magenta Cyan White Orange)
+rgb=("255;50;50" "50;220;80" "255;220;0" "60;110;255" "255;60;220" "0;230;230" "245;245;245" "255;140;0")
+count=${#names[@]}
+clear
+echo ' ___________ _____ _   _ '
+echo '|_   _| ___ \  _  | \ | |'
+echo '  | | | |_/ / | | |  \| |'
+echo '  | | |    /| | | | . ` |'
+echo '  | | | |\ \\ \_/ / |\  |'
+echo '  \_/ \_| \_|\___/\_| \_/'
+echo " =====CODE TERMINAL====="
+echo "Choose your color:"
+for i in "${!names[@]}"; do
+    printf '  %d) \e[48;2;%sm  \e[0m %s\n' $(( i + 1 )) "${rgb[i]}" "${names[i]}"
 done
 while true; do
-    IFS= read -rsn1 -p "Enter Your Choice: " choice
+    IFS= read -rsn1 -p "Enter Your Choice (1-$count): " choice
     echo
-    [[ $choice =~ ^[1-7]$ ]] && ((choice >= 1 && choice <= count )) && break
+    [[ $choice =~ ^[1-9]$ ]] && (( choice >= 1 && choice <= count )) && break
 done
 pidx=$(( choice - 1 ))
-aidx=$pidx
-while (( aidx == pidx )); do
-    aidx=$(( RANDOM % count ));
-done
-PCOL=${codes[pidx]}
-ACOL=${codes[aidx]}
 
+dist2() {
+    local IFS=';'
+    local -a a=($1) b=($2)
+    echo $(( (a[0]-b[0])**2 + (a[1]-b[1])**2 + (a[2]-b[2])**2 ))
+}
+
+# The computer picks a colour that def fs fs aint and def not yours
+# (distance >=greater than for my homies who cant read math>= 150, so 22500 squared) that the 50/50 blend is at least 75 away
+# Dat way the trail colououorerr never looks like either head. Head where?!!
+
+aidx=$pidx
+
+while (( aidx == pidx )) || (( $(dist2 "${rgb[pidx]}" "${rgb[aidx]}") < 22500 )); do
+    aidx=$(( RANDOM % count ))
+done
+PC=${rgb[pidx]}
+AC=${rgb[aidx]}
+
+# Every trail pixel is the fity fity blend of the colors
+mix "$PC" "$AC"; BL=$MIX
+echo "You are ${names[pidx]}."
+echo "The computer is ${names[aidx]}."
+sleep 1.5
 
 # I sure hope the hellhole abomination of fear and I don't wanna do this anymore dosent activate. Meanwile the command to activate the hellhole abomination of fear and I dont wanna do this anymore.
 tput civis
 clear
 wall["$py,$px"]=1; draw $py $px "$PCOL"
 wall["$ay,$ax"]=1; draw $ay $ax "$ACOL"
-# fuhs the cursor  and hides it.
+# fuhs up the cursor in an alley killing it and unlike a shitty serial killer dis actually hides the mouse.
 
 # Main loop or somehting ts ts nonshelant dread head stuff right here.
 while true; do
@@ -97,49 +122,55 @@ while true; do
     esac
     if (( ndy != -pdy || ndx != -pdx )); then pdy=$ndy; pdx=$ndx; fi
 
-
-# dirty wireback oil slinging copper laced waste of clanker space
-if ! free $(( ay + ady )) $(( ax + adx )) || (( RANDOM % 20 == 0 )); then
-    opts=()
-    for d in "-1 0" "1 0" "0 -1" "0 1"; do
-        set -- $d
-        (( $1 == -ady && $2 == -adx )) && continue
-        free $(( ay + $1 )) $(( ax + $2 )) && opts+=("$d")
-    done
-    if (( ${#opts[@]} > 0 )); then
-        set -- ${opts[RANDOM % ${#opts[@]}]}
-        ady=$1; adx=$2
+    # dirty wireback oil slinging copper laced waste of clanker space
+    if ! free $(( ay + ady )) $(( ax + adx )) || (( RANDOM % 20 == 0 )); then
+        opts=()
+        for d in "-1 0" "1 0" "0 -1" "0 1"; do
+            set -- $d
+            (( $1 == -ady && $2 == -adx )) && continue
+            free $(( ay + $1 )) $(( ax + $2 )) && opts+=("$d")
+        done
+        if (( ${#opts[@]} > 0 )); then
+            set -- ${opts[RANDOM % ${#opts[@]}]}
+            ady=$1; adx=$2
+        fi
     fi
-fi
 
-# your magisty the collison theres been a second bus
-npy=$(( py + pdy )); npx=$(( px + pdx ))
-nay=$(( ay + ady )); nax=$(( ax + adx ))
-pdead=0; adead=0
-free $npy $npx || pdead=1
-free $nay $nax || adead=1
-if (( npy == nay && npx == nax )); then pdead=1; adead=1; fi
+    # your magisty the collison theres been a second bus
+    npy=$(( py + pdy )); npx=$(( px + pdx ))
+    nay=$(( ay + ady )); nax=$(( ax + adx ))
+    pdead=0; adead=0
+    free $npy $npx || pdead=1
+    free $nay $nax || adead=1
+    if (( npy == nay && npx == nax )); then pdead=1; adead=1; fi
 
-# errybody moves to a new cell and records it too da wall
-if (( pdead == 0 )); then
-    py=$npy; px=$npx; wall["$py,$px"]=1; draw $py $px "$PCOL"
-fi
-if (( adead == 0 )); then
-    ay=$nay; ax=$nax; wall["$ay,$ax"]=1; draw $ay $ax "$ACOL"
-fi
+    # errybody moves to a new pixel and records it too da wall.
+    # The old head turns into a trail pixel (braided color), the new head is solid.
+    if (( pdead == 0 )); then
+        col["$py,$px"]=$BL; render $py $px
+        py=$npy; px=$npx
+        wall["$py,$px"]=p; col["$py,$px"]=$PC; render $py $px
+    fi
+    if (( adead == 0 )); then
+        col["$ay,$ax"]=$BL; render $ay $ax
+        ay=$nay; ax=$nax
+        wall["$ay,$ax"]=a; col["$ay,$ax"]=$AC; render $ay $ax
+    fi
 
-# Death of instant
-if (( pdead || adead )); then
-    if (( pdead && adead )); then msg="DRAW"
-    elif (( pdead )); then msg="YOU LOSE"
-    else msg="YOU WIN!"; fi
-    tput cup $(( H / 2 )) $(( W / 2 - ${#msg} / 2 ))
-    printf '\e[1m%s\e[0m' "$msg"
-    read -rsn1
-    break
-fi 
+    # Death of instant variaty
+    if (( pdead || adead )); then
+        if (( pdead && adead )); then msg="DRAW"
+        elif (( pdead )); then msg="YOU LOSE"
+        else msg="YOU WIN!"; fi
+        printf '\e[%d;%dH\e[1;97;40m %s \e[0m' $(( R / 2 + 1 )) $(( PW / 2 - ${#msg} / 2 )) "$msg"
+        read -rsn1
+        break
+    fi
 done
 
 # revision log IDK 4:40 AM 10/29/2026
 # HOLY SH*T I ACTUALLY MADE A GAME IN BASH IN MY TERMINAL ON MY TIME. I DIDNT THINK I COULD DO IT. I DOUBTED MYSELF MORE THAN EVERYONE.
 # I MADE TRON USING GITHUB BASH SCRIPTING. HOLY!!!!!!!!!!
+
+# revision log Color Update 3:46 PM 11/16/2026
+# Added the new colors and the ability to blend them making new ones for the player.
