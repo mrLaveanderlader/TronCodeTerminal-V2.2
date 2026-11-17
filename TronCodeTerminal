@@ -47,6 +47,15 @@ mix() {
     MIX="$(( (a[0] + b[0]) / 2 ));$(( (a[1] + b[1]) / 2 ));$(( (a[2] + b[2]) / 2 ))"
 }
  
+# mixw "r;g;b" "r;g;b" W: weighted mix. W is the percent of the FIRST color (0-100). Result goes in $MIX.
+# mixw A B 75 = 75% A + 25% B.
+mixw() {
+    local IFS=';'
+    local -a a=($1) b=($2)
+    local w=$3
+    MIX="$(( (a[0]*w + b[0]*(100-w)) / 100 ));$(( (a[1]*w + b[1]*(100-w)) / 100 ));$(( (a[2]*w + b[2]*(100-w)) / 100 ))"
+}
+
 # Free only works if the cell is on the screen and nobody has a trail at the point.
 free() {
     (( $1 >= 0 && $1 < PH && $2 >= 0 && $2 < PW )) && [[ -z ${wall["$1,$2"]} ]]
@@ -96,8 +105,13 @@ AC=${rgb[aidx]}
  
 # Every trail pixel is the fity fity blend of the colors
 mix "$PC" "$AC"; BL=$MIX
+# Each rider gets its OWN trail color: yours leans 75% toward your color, the computer's leans 75% toward its color.
+# Both are still blends, and since the two head colors are always far apart, PT and AT are always different from each other.
+mixw "$PC" "$AC" 75; PT=$MIX
+mixw "$PC" "$AC" 25; AT=$MIX
 echo "You are ${names[pidx]}."
 echo "The computer is ${names[aidx]}."
+echo "Your trail leans toward your color, the computer's trail leans toward its color."
 sleep 1.5
  
 # I sure hope the hellhole abomination of fear and I don't wanna do this anymore dosent activate. Meanwile the command to activate the hellhole abomination of fear and I dont wanna do this anymore.
@@ -147,12 +161,12 @@ while true; do
     # errybody moves to a new pixel and records it too da wall.
     # The old head turns into a trail pixel (braided color), the new head is solid.
     if (( pdead == 0 )); then
-        col["$py,$px"]=$BL; render $py $px
+        col["$py,$px"]=$PT; render $py $px
         py=$npy; px=$npx
         wall["$py,$px"]=p; col["$py,$px"]=$PC; render $py $px
     fi
     if (( adead == 0 )); then
-        col["$ay,$ax"]=$BL; render $ay $ax
+        col["$ay,$ax"]=$AT; render $ay $ax
         ay=$nay; ax=$nax
         wall["$ay,$ax"]=a; col["$ay,$ax"]=$AC; render $ay $ax
     fi
@@ -175,4 +189,4 @@ done
 # revision log Color Update 3:46 PM 11/16/2026
 # Added the new colors and the ability to blend them making new ones for the player.
 # additional patch for Color Update 12:36 PM 11/17/2026
-
+# changed the functionality of the rider's color and head color 
