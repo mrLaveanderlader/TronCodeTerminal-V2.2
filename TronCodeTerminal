@@ -1,13 +1,13 @@
 #!/bin/bash
-
-
+ 
+ 
 # If this is your returning time or first time or even your 3rd time I am sorry not sorry in advance.
 # this is my own private code domicile and I wont be programed or whatever they said in breaking bad. 
 # Don't like the code then cry me a tibutary. Im the one coding at 1 billion o'clock AM on a Wednesday instead of sleeping,
 # I am armed with a large baja blast nacho fires and 3 bean burrios from taco bell, so belive me whe aren't bottom of the barrel code yet.
 # To reach rock bottom you gotta be coding see the sun rising up as the sky changes colors and youve done nothing but code a feature you didnt actually need.
-
-
+ 
+ 
 # map height and width stuff here much, or something like that type shit.
 declare -A wall
 declare -A col
@@ -15,44 +15,44 @@ R=$(( $(tput lines) - 1 ))
 PW=$(( $(tput cols) - 1 ))    
 PH=$(( R * 2 ))
 # Sets the pixel height so theres 2 pixels per row and can 
-
+ 
 # Sets the starting position due to the split of the pixels now. 
 py=$(( PH / 2 )); px=$(( PW / 4 ));     pdy=0; pdx=1
 ay=$(( PH / 2 )); ax=$(( 3 * PW / 4 )); ady=0; adx=-1
-
-
+ 
+ 
 # idk what to say here other than I cant be funny all the time
 cleanup() { tput cnorm; tput sgr0; clear; }
 trap cleanup EXIT
 trap 'exit' INT TERM
-
+ 
 # Due to the changes of adding new colors and the ability to blend we use the function RENDER now
 render() { 
-        local x=$2 cy$(( $1 * 2 ))
-        local t=${col["$(( cy * 2 )),$x"]} b=${col["$(( cy * 2 )),$x"]}
-        if [[ -n $t || -n $b ]]; then
+        local x=$2 cy=$(( $1 / 2 ))
+        local t=${col["$(( cy * 2 )),$x"]} b=${col["$(( cy * 2 + 1 )),$x"]}
+        printf '\e[%d;%dH' $(( cy + 1 )) $(( x + 1 ))
+        if [[ -n $t && -n $b ]]; then
             printf '\e[38;2;%sm\e[48;2;%sm▀\e[0m' "$t" "$b"
         elif [[ -n $t ]]; then
             printf '\e[38;2;%sm▀\e[0m' "$t"
-        else [[ -n $b ]]; then
+        else
             printf '\e[38;2;%sm▄\e[0m' "$b"
         fi
-        
 }
-
+ 
 # Does the averaging 50/50 style of the two colors and returns the new color as the MIX variable.
 mix() {
     local IFS=';'
     local -a a=($1) b=($2)
     MIX="$(( (a[0] + b[0]) / 2 ));$(( (a[1] + b[1]) / 2 ));$(( (a[2] + b[2]) / 2 ))"
 }
-
+ 
 # Free only works if the cell is on the screen and nobody has a trail at the point.
 free() {
     (( $1 >= 0 && $1 < PH && $2 >= 0 && $2 < PW )) && [[ -z ${wall["$1,$2"]} ]]
 }
-
-
+ 
+ 
 # Color Menu type shit yeah... numbers or whatever
 names=(Red Green Yellow Blue Magenta Cyan White Orange)
 rgb=("255;50;50" "50;220;80" "255;220;0" "60;110;255" "255;60;220" "0;230;230" "245;245;245" "255;140;0")
@@ -75,38 +75,38 @@ while true; do
     [[ $choice =~ ^[1-9]$ ]] && (( choice >= 1 && choice <= count )) && break
 done
 pidx=$(( choice - 1 ))
-
+ 
 dist2() {
     local IFS=';'
     local -a a=($1) b=($2)
     echo $(( (a[0]-b[0])**2 + (a[1]-b[1])**2 + (a[2]-b[2])**2 ))
 }
-
+ 
 # The computer picks a colour that def fs fs aint and def not yours
 # (distance >=greater than for my homies who cant read math>= 150, so 22500 squared) that the 50/50 blend is at least 75 away
 # Dat way the trail colououorerr never looks like either head. Head where?!!
-
+ 
 aidx=$pidx
-
+ 
 while (( aidx == pidx )) || (( $(dist2 "${rgb[pidx]}" "${rgb[aidx]}") < 22500 )); do
     aidx=$(( RANDOM % count ))
 done
 PC=${rgb[pidx]}
 AC=${rgb[aidx]}
-
+ 
 # Every trail pixel is the fity fity blend of the colors
 mix "$PC" "$AC"; BL=$MIX
 echo "You are ${names[pidx]}."
 echo "The computer is ${names[aidx]}."
 sleep 1.5
-
+ 
 # I sure hope the hellhole abomination of fear and I don't wanna do this anymore dosent activate. Meanwile the command to activate the hellhole abomination of fear and I dont wanna do this anymore.
 tput civis
 clear
-wall["$py,$px"]=1; draw $py $px "$PCOL"
-wall["$ay,$ax"]=1; draw $ay $ax "$ACOL"
+wall["$py,$px"]=p; col["$py,$px"]=$PC; render $py $px
+wall["$ay,$ax"]=a; col["$ay,$ax"]=$AC; render $ay $ax
 # fuhs up the cursor in an alley killing it and unlike a shitty serial killer dis actually hides the mouse.
-
+ 
 # Main loop or somehting ts ts nonshelant dread head stuff right here.
 while true; do
     key=""
@@ -121,7 +121,7 @@ while true; do
         *)      ndy=$pdy; ndx=$pdx ;;
     esac
     if (( ndy != -pdy || ndx != -pdx )); then pdy=$ndy; pdx=$ndx; fi
-
+ 
     # dirty wireback oil slinging copper laced waste of clanker space
     if ! free $(( ay + ady )) $(( ax + adx )) || (( RANDOM % 20 == 0 )); then
         opts=()
@@ -135,7 +135,7 @@ while true; do
             ady=$1; adx=$2
         fi
     fi
-
+ 
     # your magisty the collison theres been a second bus
     npy=$(( py + pdy )); npx=$(( px + pdx ))
     nay=$(( ay + ady )); nax=$(( ax + adx ))
@@ -143,7 +143,7 @@ while true; do
     free $npy $npx || pdead=1
     free $nay $nax || adead=1
     if (( npy == nay && npx == nax )); then pdead=1; adead=1; fi
-
+ 
     # errybody moves to a new pixel and records it too da wall.
     # The old head turns into a trail pixel (braided color), the new head is solid.
     if (( pdead == 0 )); then
@@ -156,7 +156,7 @@ while true; do
         ay=$nay; ax=$nax
         wall["$ay,$ax"]=a; col["$ay,$ax"]=$AC; render $ay $ax
     fi
-
+ 
     # Death of instant variaty
     if (( pdead || adead )); then
         if (( pdead && adead )); then msg="DRAW"
@@ -167,10 +167,12 @@ while true; do
         break
     fi
 done
-
+ 
 # revision log IDK 4:40 AM 10/29/2026
 # HOLY SH*T I ACTUALLY MADE A GAME IN BASH IN MY TERMINAL ON MY TIME. I DIDNT THINK I COULD DO IT. I DOUBTED MYSELF MORE THAN EVERYONE.
 # I MADE TRON USING GITHUB BASH SCRIPTING. HOLY!!!!!!!!!!
-
+ 
 # revision log Color Update 3:46 PM 11/16/2026
 # Added the new colors and the ability to blend them making new ones for the player.
+# additional patch for Color Update 12:36 PM 11/17/2026
+
